@@ -5,7 +5,7 @@ pipeline {
     }
     agent any
     tools {
-        maven 'maven_3.9.6'
+        maven 'maven 3.9.6'
     }
     stages {
         stage('Maven Clean') {
