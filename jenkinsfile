@@ -1,0 +1,71 @@
+pipeline {
+    agent any
+    
+    environment {
+        // Load Docker Hub credentials from Jenkins credentials store
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub')
+        // Define the image tags with build numbers
+        BACKEND_IMAGE_TAG = "your-docker-username/spring-boot-backend:${BUILD_NUMBER}"
+        FRONTEND_IMAGE_TAG = "your-docker-username/html-frontend:${BUILD_NUMBER}"
+    }
+
+    stages {
+        stage('Build Backend') {
+            steps {
+                // Build the Spring Boot backend application
+                sh './mvnw clean package -DskipTests'
+                // Build the Docker image for the backend
+                sh "docker build -t ${BACKEND_IMAGE_TAG} ."
+            }
+        }
+
+        stage('Build Frontend') {
+            steps {
+                // Build the frontend HTML application
+                // Assuming your frontend files are in a directory named 'frontend'
+                dir('frontend') {
+                    // You may need to run any build commands specific to your frontend framework here
+                }
+                // Build the Docker image for the frontend
+                // Assuming your Dockerfile for frontend is in the 'frontend' directory
+                sh "docker build -t ${FRONTEND_IMAGE_TAG} frontend"
+            }
+        }
+
+        stage('Login to Docker Hub') {
+            steps {
+                // Use Docker Hub credentials to log in
+                withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKERHUB_USERNAME', passwordVariable: 'DOCKERHUB_PASSWORD')]) {
+                    sh "echo ${DOCKERHUB_PASSWORD} | docker login -u ${DOCKERHUB_USERNAME} --password-stdin"
+                }
+            }
+        }
+
+        stage("Push images to Docker Hub") {
+            steps {
+                // Push the built Docker images to Docker Hub
+                sh "docker push ${BACKEND_IMAGE_TAG}"
+                sh "docker push ${FRONTEND_IMAGE_TAG}"
+            }
+        }
+
+        stage("Deploying on Kubernetes") {
+            steps {
+                // You can deploy backend and frontend separately here using kubectl
+                // Set the images for the Kubernetes deployment for both backend and frontend
+                sh "kubectl set image deployment/backend-deployment backend-container=${BACKEND_IMAGE_TAG} -n default"
+                sh "kubectl set image deployment/frontend-deployment frontend-container=${FRONTEND_IMAGE_TAG} -n default"
+                // Restart the deployments to apply changes
+                sh "kubectl rollout restart deployment/backend-deployment -n default"
+                sh "kubectl rollout restart deployment/frontend-deployment -n default"
+            }
+        }
+    }
+
+    post {
+        always {
+            // Logout from Docker Hub after the pipeline execution
+            sh 'docker logout'
+        }
+    }
+}
