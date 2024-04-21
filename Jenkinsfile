@@ -16,7 +16,7 @@ pipeline {
         stage('Build') {
             steps {
                 sh 'rm -rf *.var'
-                sh 'jar -cvf Survey-0.0.1-SNAPSHOT.jar -C "src/main" .'     
+                sh 'jar -cvf survey0.1-0.0.1-SNAPSHOT.jar -C "src/main" .'     
                 sh 'docker build -t skm05/survey:latest .'
             }
         }
