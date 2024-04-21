@@ -4,11 +4,14 @@ pipeline {
         DOCKERHUB_CREDENTIALS = credentials('dockerhub')
     }
     agent any
+    tools {
+        maven 'maven_3.9.6'
+    }
     stages {
         stage('Maven Clean') {
             steps {
                script{
-                sh 'mvn clean install -DskipTests'
+                sh 'mvn clean install'
                }
             }
         }
